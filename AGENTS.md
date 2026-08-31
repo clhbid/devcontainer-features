@@ -47,10 +47,9 @@ them:
 | `afk-loop`      | Dispatching work to Copilot, reviewing what comes back, and handling a run that goes wrong                                                                     |
 | `open-pr`       | Opening and updating a pull request                                                                                                                             |
 
-This repo has no devcontainer (see **Devcontainer** below), so nothing installs the skills for
-you automatically. Install them by hand with `./scripts/install-agent-skills.sh` — pass an agent
-name to install elsewhere, e.g. `./scripts/install-agent-skills.sh copilot`, or `'*'` for every
-agent it detects.
+This repo has no devcontainer, so nothing installs the skills for you automatically. Install them
+by hand with `./scripts/install-agent-skills.sh` — pass an agent name to install elsewhere, e.g.
+`./scripts/install-agent-skills.sh copilot`, or `'*'` for every agent it detects.
 
 **If you are reading this without those skills, you have everything you need.** A Copilot coding
 agent runs in an environment that has not installed them: the commands above, and **How a run
@@ -58,13 +57,3 @@ ends**, are the whole contract. Anything else is reference material for a person
 the skills to hand — never a prerequisite for finishing an issue. If you find you needed something
 that isn't here, say so on the pull request, so it can be added to this file rather than restored
 as a copy of the docs.
-
-## Devcontainer
-
-This repo does not have its own devcontainer, and won't get one. It authors dev container
-Features; consuming one of its own Features (or any Feature) to build and test itself would be
-circular, and the actual toolchain here is small — bash and the `@devcontainers/cli` `devcontainer`
-command, both trivial to have on a normal machine or in CI without a container. Publishing already
-runs through the `devcontainers/action` GitHub Action rather than a devcontainer terminal session.
-If a real need for one shows up — a build dependency this repo can't reasonably ask contributors to
-install by hand — revisit this decision and record why here.
