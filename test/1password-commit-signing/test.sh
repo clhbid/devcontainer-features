@@ -4,9 +4,9 @@
 # includes the 1password-commit-signing Feature with no options.
 #
 # CI has no 1Password socket, so these tests only cover the container-side
-# behaviour: openssh-client is present, the postStartCommand script is
-# installed and idempotent, and the socket-absent path is a no-op that
-# never points SSH_AUTH_SOCK at a non-socket.
+# behaviour: ssh-keygen supports SSH signing, the postStartCommand script is
+# installed and idempotent, and the socket-absent path never points
+# SSH_AUTH_SOCK at a non-socket or overwrites an existing forwarded agent.
 
 set -e
 
@@ -16,6 +16,14 @@ source dev-container-features-test-lib
 POST_START=/usr/local/share/1password-commit-signing/post-start.sh
 
 check "openssh-client is installed" bash -c 'command -v ssh-keygen'
+
+check "ssh-keygen supports SSH signing" bash -c '
+    probe="$(ssh-keygen -Y sign 2>&1 || true)"
+    case "$probe" in
+        *"unknown option -- Y"*|*"illegal option -- Y"*|*"Unsupported operation for -Y:"*) exit 1 ;;
+        *) ;;
+    esac
+'
 
 check "post-start.sh was installed and is executable" bash -c "test -x $POST_START"
 
@@ -27,7 +35,9 @@ check "postStartCommand runs cleanly with no socket present" bash -c "$POST_STAR
 
 check "postStartCommand is idempotent when run twice" bash -c "$POST_START && $POST_START"
 
-check "SSH_AUTH_SOCK is not exported when there is no socket" bash -c '. /etc/profile.d/1password-commit-signing.sh; [ -z "${SSH_AUTH_SOCK:-}" ]'
+check "SSH_AUTH_SOCK stays unset when there is no socket" bash -c 'unset SSH_AUTH_SOCK; . /etc/profile.d/1password-commit-signing.sh; [ -z "${SSH_AUTH_SOCK:-}" ]'
+
+check "existing SSH_AUTH_SOCK is preserved when there is no socket" bash -c 'SSH_AUTH_SOCK=/tmp/existing.sock; export SSH_AUTH_SOCK; . /etc/profile.d/1password-commit-signing.sh; [ "$SSH_AUTH_SOCK" = /tmp/existing.sock ]'
 
 check "a working gpg.ssh.program is left alone" bash -c "
     git config --global gpg.ssh.program /usr/bin/ssh-keygen

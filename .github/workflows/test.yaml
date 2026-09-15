@@ -25,12 +25,11 @@ jobs:
         run: npm install -g @devcontainers/cli
 
       # Runners use plain Docker Engine, not Docker Desktop, so a bind mount
-      # of a genuinely missing host path fails container startup outright
-      # instead of falling back to an empty directory the way Docker
-      # Desktop does on macOS/Windows (see design note 3 on the Feature).
-      # Pre-create the 1Password socket's parent path as a plain directory
-      # so the container starts, which reproduces the same "no socket"
-      # case the Feature has to be a no-op for.
+      # of a genuinely missing host path fails container startup outright.
+      # Pre-create the macOS 1Password socket path as a plain directory so CI
+      # can still exercise the Feature's in-container "path exists but is not
+      # a socket" handling; unsupported Linux/Windows hosts should not enable
+      # this Feature in the first place.
       - name: "Simulate a host with no 1Password socket"
         run: mkdir -p "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 

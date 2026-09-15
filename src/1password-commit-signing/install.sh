@@ -7,16 +7,40 @@
 # post-start.sh, invoked via postStartCommand in devcontainer-feature.json.
 set -euo pipefail
 
-# ssh-keygen -Y sign/verify (used to sign commits with an agent-held SSH
-# key) needs OpenSSH >= 8.9. Don't assume the base image already has it.
-if ! command -v ssh-keygen >/dev/null 2>&1; then
+# Probe the actual ssh-keygen -Y sign capability instead of parsing version
+# strings: distros can backport the feature independently of the reported
+# OpenSSH version, but commit signing only works when the subcommand parser is
+# present.
+supports_ssh_signing() {
+    if ! command -v ssh-keygen >/dev/null 2>&1; then
+        return 1
+    fi
+
+    probe_output="$(ssh-keygen -Y sign 2>&1 </dev/null || true)"
+    case "$probe_output" in
+        *"unknown option -- Y"*|*"illegal option -- Y"*|*"Unsupported operation for -Y:"*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+if ! supports_ssh_signing; then
     if command -v apt-get >/dev/null 2>&1; then
         apt-get update -y
         apt-get install -y --no-install-recommends openssh-client
         rm -rf /var/lib/apt/lists/*
     else
-        echo "1password-commit-signing: no apt-get available and ssh-keygen is missing; skipping openssh-client install" >&2
+        echo "1password-commit-signing: ssh-keygen -Y sign is unavailable and no apt-get is present to install openssh-client" >&2
+        exit 1
     fi
+fi
+
+if ! supports_ssh_signing; then
+    echo "1password-commit-signing: ssh-keygen is installed but does not support -Y sign" >&2
+    exit 1
 fi
 
 install_dir="/usr/local/share/1password-commit-signing"
@@ -25,8 +49,9 @@ cp -f "$(dirname "$0")/post-start.sh" "$install_dir/post-start.sh"
 chmod 755 "$install_dir/post-start.sh"
 
 # Only export SSH_AUTH_SOCK when the forwarded path is an actual socket.
-# On hosts without the 1Password agent, Docker Desktop's bind mount of a
-# missing source creates an empty *directory* at /ssh-agent.sock instead;
+# On supported macOS hosts without the 1Password agent running, Docker
+# Desktop's bind mount of a missing source creates an empty *directory* at
+# /ssh-agent.sock instead;
 # pointing SSH_AUTH_SOCK at that would break whatever agent forwarding VS
 # Code already set up. /etc/profile.d runs through the default
 # userEnvProbe (loginInteractiveShell), so this reaches the VS Code server

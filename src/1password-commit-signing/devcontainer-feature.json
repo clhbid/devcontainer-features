@@ -1,8 +1,8 @@
 {
   "id": "1password-commit-signing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "1Password commit signing",
-  "description": "Forwards the 1Password SSH agent socket from macOS hosts so git commits can be signed with an SSH key held in 1Password. No-op on hosts without the socket.",
+  "description": "Forwards the 1Password SSH agent socket from macOS hosts so git commits can be signed with an SSH key held in 1Password.",
   "documentationURL": "https://github.com/clhbid/devcontainer-features/tree/main/src/1password-commit-signing",
   "options": {},
   "mounts": [

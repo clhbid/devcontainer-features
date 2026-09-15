@@ -19,9 +19,10 @@ The repositories that consume these Features are `clhbid/CLHbid-LiveAuction`,
 1Password agent socket from its macOS path
 (`~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`) into the container.
 
-Windows and Linux hosts are not supported. On those hosts the Feature must be a no-op — it must not
-break the container or interfere with whatever SSH agent forwarding is already in place. Pull
-requests adding Windows and Linux support are welcome.
+Windows and Linux hosts are not supported. On Docker Engine, enabling this Feature without that
+macOS path available on the host fails container creation before any in-container guard can run, so
+only enable it on macOS hosts that provide the 1Password socket path. Pull requests adding Windows
+and Linux support are welcome.
 
 ## Layout
 
