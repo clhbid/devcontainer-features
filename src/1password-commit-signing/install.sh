@@ -39,7 +39,7 @@ if ! supports_ssh_signing; then
 fi
 
 if ! supports_ssh_signing; then
-    echo "1password-commit-signing: ssh-keygen is installed but does not support -Y sign" >&2
+    echo "1password-commit-signing: ssh-keygen -Y sign is still unavailable after attempting to install openssh-client" >&2
     exit 1
 fi
 
