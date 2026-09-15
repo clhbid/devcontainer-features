@@ -10,7 +10,7 @@ The repositories that consume these Features are `clhbid/CLHbid-LiveAuction`,
 
 | Feature                    | ID                                                                | Status      |
 | -------------------------- | ----------------------------------------------------------------- | ----------- |
-| `1password-commit-signing` | `ghcr.io/clhbid/devcontainer-features/1password-commit-signing:1` | Not yet built |
+| `1password-commit-signing` | `ghcr.io/clhbid/devcontainer-features/1password-commit-signing:1` | Built, awaiting first publish to GHCR |
 
 ## Platform support
 
