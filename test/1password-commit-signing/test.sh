@@ -52,5 +52,21 @@ check "a non-existent gpg.ssh.program is unset" bash -c "
     ! git config --global --get gpg.ssh.program
 "
 
+check "an un-unsettable gpg.ssh.program fails with an explanation and next steps" bash -c "
+    if [ \"\$(id -u)\" -eq 0 ]; then
+        echo 'skipped: running as root, which can always write the gitconfig'
+        exit 0
+    fi
+    workdir=\"\$(mktemp -d)\"
+    export GIT_CONFIG_GLOBAL=\"\$workdir/gitconfig\"
+    git config --global gpg.ssh.program /nonexistent/op-ssh-sign
+    chmod 500 \"\$workdir\"
+    output=\"\$($POST_START 2>&1)\"
+    status=\\$?
+    chmod 700 \"\$workdir\"
+    [ \"\$status\" -ne 0 ]
+    printf '%s' \"\$output\" | grep -q 'Next steps'
+"
+
 # Report result
 reportResults

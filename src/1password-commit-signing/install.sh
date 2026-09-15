@@ -28,20 +28,35 @@ supports_ssh_signing() {
     return 1
 }
 
+fail() {
+    printf '%s: %s\n' "1password-commit-signing" "$1" >&2
+    shift
+    for line in "$@"; do
+        printf '  %s\n' "$line" >&2
+    done
+    exit 1
+}
+
 if ! supports_ssh_signing; then
     if command -v apt-get >/dev/null 2>&1; then
         apt-get update -y
         apt-get install -y --no-install-recommends openssh-client
         rm -rf /var/lib/apt/lists/*
     else
-        echo "1password-commit-signing: ssh-keygen -Y sign is unavailable and no apt-get is present to install openssh-client" >&2
-        exit 1
+        fail "this image cannot sign commits with SSH and openssh-client cannot be installed automatically." \
+            "What happened: 'ssh-keygen -Y sign' (OpenSSH 8.9 or newer) is unavailable, and this Feature only knows how to install openssh-client with apt-get, which this image does not have." \
+            "Next steps:" \
+            "- Install an OpenSSH client that supports 'ssh-keygen -Y sign' in your Dockerfile before this Feature runs." \
+            "- Or switch to a Debian or Ubuntu based image, such as mcr.microsoft.com/devcontainers/base:ubuntu."
     fi
 fi
 
 if ! supports_ssh_signing; then
-    echo "1password-commit-signing: ssh-keygen -Y sign is still unavailable after attempting to install openssh-client" >&2
-    exit 1
+    fail "openssh-client was installed but 'ssh-keygen -Y sign' still does not work, so git cannot sign commits." \
+        "What happened: the installed OpenSSH client is older than 8.9, which is the first release that supports SSH signatures." \
+        "Next steps:" \
+        "- Use a newer base image, such as mcr.microsoft.com/devcontainers/base:ubuntu." \
+        "- Or install a backported openssh-client (8.9 or newer) in your Dockerfile before this Feature runs."
 fi
 
 install_dir="/usr/local/share/1password-commit-signing"
