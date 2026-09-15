@@ -18,11 +18,12 @@ POST_START=/usr/local/share/1password-commit-signing/post-start.sh
 check "openssh-client is installed" bash -c 'command -v ssh-keygen'
 
 check "ssh-keygen supports SSH signing" bash -c '
-    probe="$(ssh-keygen -Y sign 2>&1 || true)"
-    case "$probe" in
-        *"unknown option -- Y"*|*"illegal option -- Y"*|*"Unsupported operation for -Y:"*) exit 1 ;;
-        *) ;;
-    esac
+    workdir="$(mktemp -d)"
+    trap "rm -rf \"$workdir\"" EXIT
+    printf "probe" > "$workdir/payload"
+    ssh-keygen -q -t ed25519 -N "" -f "$workdir/probe" >/dev/null 2>&1
+    ssh-keygen -Y sign -n git -f "$workdir/probe" "$workdir/payload" >/dev/null 2>&1
+    test -f "$workdir/payload.sig"
 '
 
 check "post-start.sh was installed and is executable" bash -c "test -x $POST_START"

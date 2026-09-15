@@ -9,22 +9,23 @@ set -euo pipefail
 
 # Probe the actual ssh-keygen -Y sign capability instead of parsing version
 # strings: distros can backport the feature independently of the reported
-# OpenSSH version, but commit signing only works when the subcommand parser is
-# present.
+# OpenSSH version, so exercise a scratch signing flow directly.
 supports_ssh_signing() {
     if ! command -v ssh-keygen >/dev/null 2>&1; then
         return 1
     fi
 
-    probe_output="$(ssh-keygen -Y sign 2>&1 </dev/null || true)"
-    case "$probe_output" in
-        *"unknown option -- Y"*|*"illegal option -- Y"*|*"Unsupported operation for -Y:"*)
-            return 1
-            ;;
-        *)
-            return 0
-            ;;
-    esac
+    workdir="$(mktemp -d)"
+    printf 'probe' > "$workdir/payload"
+
+    if ssh-keygen -q -t ed25519 -N '' -f "$workdir/probe" >/dev/null 2>&1 &&
+        ssh-keygen -Y sign -n git -f "$workdir/probe" "$workdir/payload" >/dev/null 2>&1; then
+        rm -rf "$workdir"
+        return 0
+    fi
+
+    rm -rf "$workdir"
+    return 1
 }
 
 if ! supports_ssh_signing; then
