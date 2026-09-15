@@ -62,7 +62,7 @@ check "an un-unsettable gpg.ssh.program fails with an explanation and next steps
     git config --global gpg.ssh.program /nonexistent/op-ssh-sign
     chmod 500 \"\$workdir\"
     output=\"\$($POST_START 2>&1)\"
-    status=\\$?
+    status=\$?
     chmod 700 \"\$workdir\"
     [ \"\$status\" -ne 0 ]
     printf '%s' \"\$output\" | grep -q 'Next steps'
