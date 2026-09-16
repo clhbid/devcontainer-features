@@ -64,14 +64,13 @@ mkdir -p "$install_dir"
 cp -f "$(dirname "$0")/post-start.sh" "$install_dir/post-start.sh"
 chmod 755 "$install_dir/post-start.sh"
 
-# Only export SSH_AUTH_SOCK when the forwarded path is an actual socket.
-# On supported macOS hosts without the 1Password agent running, Docker
-# Desktop's bind mount of a missing source creates an empty *directory* at
-# /ssh-agent.sock instead;
-# pointing SSH_AUTH_SOCK at that would break whatever agent forwarding VS
-# Code already set up. /etc/profile.d runs through the default
-# userEnvProbe (loginInteractiveShell), so this reaches the VS Code server
-# and its terminals without ever being set unconditionally.
+# VS Code gets SSH_AUTH_SOCK from the consumer's remoteEnv, the only
+# setting it applies on top of its own SSH agent forwarding (a Feature
+# cannot set remoteEnv, and containerEnv loses to the forwarding). This
+# profile script covers everything that is not VS Code -- `devcontainer
+# exec`, `docker exec` login shells, other editors -- and only exports the
+# variable when the forwarded path is an actual socket, so a shell on a
+# host without the socket keeps whatever agent it already had.
 cat > /etc/profile.d/1password-commit-signing.sh <<'EOF'
 if [ -S /ssh-agent.sock ]; then
     export SSH_AUTH_SOCK=/ssh-agent.sock

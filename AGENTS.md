@@ -18,8 +18,8 @@ is public — anything in this file, and anything you commit here, is visible ou
 
 1. If you added or changed a Feature, bump its `version` in `devcontainer-feature.json` in the
    same pull request — a push to `main` that changes `version` publishes a new release
-1. Test the Feature locally with the devcontainers CLI:
-   `devcontainer features test -f <feature-id> --base-image <image>`
+1. Test the Feature locally with `./scripts/test-features.sh` — it wraps
+   `devcontainer features test` and provides the SSH agent socket the scenarios need
 1. Push the branch and open a pull request that references the issue it implements — see the
    `open-pr` skill
 1. Request review from a human maintainer — see **How a run ends** below
