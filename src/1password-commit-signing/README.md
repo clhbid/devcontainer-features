@@ -24,8 +24,8 @@ On every container start (`postStartCommand`):
   left alone. (VS Code strips this key when it copies the host `~/.gitconfig`; other tools that
   copy the file don't, and on these machines it names
   `/Applications/1Password.app/Contents/MacOS/op-ssh-sign`.)
-- Re-owns `/ssh-agent.sock` to `root:vscode 660` — Docker Desktop re-mounts it `root:root` each
-  start.
+- Re-owns `/ssh-agent.sock` to `root:<container user's group> 660` — Docker Desktop re-mounts it
+  `root:root` each start.
 - **Fails, with what happened and next steps**, if `/ssh-agent.sock` is missing, is an empty
   directory (the 1Password agent is off, or this is a Linux/Windows host), or can't be made
   readable and writable. `SSH_AUTH_SOCK` already points at it, so a quiet no-op would leave git
@@ -134,5 +134,7 @@ no-op, because the `remoteEnv` entry would still have displaced the agent VS Cod
 `../../scripts/test-features.sh` starts a throwaway `ssh-agent` on the host and runs the
 scenarios in `../../test/1password-commit-signing/scenarios.json`, each of which is the consumer
 config above with that agent's socket in place of the 1Password one. The checks include signing
-with the agent-held key through the forwarded socket. `devcontainer features test` on its own can't run this Feature: with no socket
-mounted, the start-up script fails the container before any test runs, by design.
+with the agent-held key through the forwarded socket.
+
+`devcontainer features test` on its own can't run this Feature: with no socket mounted, the
+start-up script fails the container before any test runs, by design.
