@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# Runs the Feature tests.
+# Runs the Feature tests: scripts/test-features.sh [scenario-name-filter]
 #
-#   scripts/test-features.sh           # every scenario
-#   scripts/test-features.sh ubuntu    # only scenarios whose name contains "ubuntu"
-#
-# The 1password-commit-signing scenarios mount a real SSH agent socket from
-# the host in place of the 1Password one, so this script starts a throwaway
-# agent holding a throwaway key before calling `devcontainer features test`,
-# and stops it afterwards. Uses `devcontainer` from PATH, or npx if it isn't
-# installed.
+# Starts a throwaway ssh-agent holding a throwaway key, which the scenarios
+# mount in place of the 1Password socket, then runs `devcontainer features
+# test` (from PATH, or via npx) and stops the agent.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Installs the 1password-commit-signing dev container Feature.
-#
-# This runs once, at image build time. Everything that has to happen on
-# every container start lives in post-start.sh, installed here and run
-# through postStartCommand.
+# Installs the 1password-commit-signing Feature at image build time.
+# Per-start work lives in post-start.sh, installed here as postStartCommand.
 set -euo pipefail
 
 FEATURE=1password-commit-signing

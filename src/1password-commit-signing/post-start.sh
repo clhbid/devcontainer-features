@@ -1,24 +1,11 @@
 #!/usr/bin/env bash
 # Runs on every container start (postStartCommand). Safe to run repeatedly.
 #
-# The consumer's devcontainer.json mounts the 1Password agent socket at
-# /ssh-agent.sock and points SSH_AUTH_SOCK at it with remoteEnv. This
-# script then:
-#
-# 1. Unsets a gpg.ssh.program in the global gitconfig that does not exist in
-#    the container. Tools that copy the host ~/.gitconfig bring across the
-#    macOS 1Password signing helper, and git needs to fall back to ssh-keygen.
-# 2. Makes the socket readable and writable by the container user. Docker
-#    Desktop re-mounts it root:root 0660 on every start.
-# 3. Checks SSH_AUTH_SOCK points at the socket. Lifecycle hooks run with
-#    remoteEnv applied, and nothing else in the container sets the variable
-#    to this path, so seeing it here means the consumer's remoteEnv is in
-#    place -- and VS Code's terminals and Source Control will see it too.
-#
-# All three are required for signing to work, so when any cannot be done
-# the script says what happened and what to do next, then exits non-zero.
-# It does not use `set -e`: every failure it cares about is checked
-# explicitly so that it can explain itself.
+# Signing needs three things: gpg.ssh.program must not name a program
+# missing from the container, the socket the consumer mounted at
+# /ssh-agent.sock must be usable, and SSH_AUTH_SOCK must point at it via
+# the consumer's remoteEnv. Each section below fixes or checks one and
+# fails with what happened and next steps, so there is no `set -e`.
 set -u
 
 FEATURE=1password-commit-signing
@@ -40,7 +27,7 @@ as_root() {
 
 # --- 1. gitconfig
 
-# --type=path expands a leading ~ the way git itself does when it runs the program.
+# --type=path expands ~ as git does when it runs the program.
 program="$(git config --global --type=path --get gpg.ssh.program 2>/dev/null)"
 if [ -n "$program" ] && ! command -v "$program" >/dev/null; then
     if ! git config --global --unset gpg.ssh.program; then
@@ -101,7 +88,8 @@ $FEATURE: the 1Password SSH agent socket ($SOCKET) is not readable and writable 
 EOF
 fi
 
-# --- 3. SSH_AUTH_SOCK
+# --- 3. SSH_AUTH_SOCK -- lifecycle hooks run with remoteEnv applied, and
+#        nothing else sets this path, so it proves the consumer's entry exists.
 
 if [ "${SSH_AUTH_SOCK:-}" != "$SOCKET" ]; then
     fail <<EOF

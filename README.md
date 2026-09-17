@@ -16,16 +16,11 @@ The repositories that consume these Features are `clhbid/CLHbid-LiveAuction`,
 
 `1password-commit-signing` works only on **macOS hosts with the
 [1Password SSH agent](https://developer.1password.com/docs/ssh/agent) enabled**. The consuming
-`devcontainer.json` mounts the 1Password agent socket
-(`~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`) at `/ssh-agent.sock` and
-points `SSH_AUTH_SOCK` at it with `remoteEnv`; the Feature does the rest. The exact lines — and
-why the Feature can't carry them itself — are in the
-[Feature's README](src/1password-commit-signing/README.md).
+`devcontainer.json` mounts the agent socket and sets `remoteEnv`; the
+[Feature's README](src/1password-commit-signing/README.md) has the lines and the reasons.
 
-Windows and Linux hosts are not supported. That `remoteEnv` entry is unconditional — it is the only
-setting VS Code applies on top of its own agent forwarding — so on a host without the 1Password
-socket the container's SSH agent is a dead path, and the Feature's start-up script fails with an
-explanation and next steps rather than leaving that silent. Pull requests adding Windows and Linux
+Windows and Linux hosts are not supported: the Feature's start-up script fails there with an
+explanation rather than silently displacing VS Code's own agent forwarding. Pull requests adding
 support are welcome.
 
 ## Layout
@@ -39,9 +34,8 @@ test/<feature-id>/scenarios.json
 test/<feature-id>/<scenario>.sh
 ```
 
-Run the tests with `./scripts/test-features.sh` (optionally `./scripts/test-features.sh ubuntu` to
-filter by scenario name). It wraps `devcontainer features test` and starts the throwaway SSH agent
-the scenarios mount in place of the 1Password socket; the CI workflow runs the same script.
+`./scripts/test-features.sh [scenario-filter]` runs the tests locally and in CI; it wraps
+`devcontainer features test` with the host-side SSH agent the scenarios need.
 
 `src/` is the source of truth for the published OCI artifacts. A push to `main` that changes a
 Feature's `version` publishes a new release; the version must be bumped in the same pull request

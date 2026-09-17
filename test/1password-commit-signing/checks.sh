@@ -1,9 +1,7 @@
 #!/bin/bash
 # Shared checks for every scenario in scenarios.json. Each scenario is the
-# documented consumer config -- a host ssh-agent socket mounted at
-# /ssh-agent.sock with `-v`, and remoteEnv pointing SSH_AUTH_SOCK at it --
-# so the permission fix, the env plumbing and agent-backed signing all run
-# for real. scripts/test-features.sh starts that agent and runs the scenarios.
+# documented consumer config with a host ssh-agent socket standing in for
+# 1Password's; scripts/test-features.sh starts that agent.
 set -e
 
 # Import test library bundled with the devcontainer CLI
@@ -12,9 +10,8 @@ source dev-container-features-test-lib
 POST_START=/usr/local/share/1password-commit-signing/post-start.sh
 SOCKET=/ssh-agent.sock
 
-# `check "label" command...` runs the command in this shell and records the
-# result. The checks below are functions with ( subshell ) bodies, so
-# anything they set, export or cd into is discarded when they return.
+# check() runs its arguments in this shell. Checks with ( subshell ) bodies
+# discard whatever they set, export or cd into.
 
 ssh_keygen_can_sign() (
     cd "$(mktemp -d)"
@@ -33,7 +30,6 @@ agent_key_signs_through_socket() (
     test -f payload.sig
 )
 
-# post-start.sh must exit non-zero and tell the user what to do.
 post_start_fails_with_next_steps() (
     if output="$($POST_START 2>&1)"; then
         echo "post-start.sh succeeded but should have failed"
@@ -52,9 +48,7 @@ post_start_fails_when_mount_is_a_directory() (
     post_start_fails_with_next_steps
 )
 
-# The socket is fine; only remoteEnv is missing. Lifecycle hooks run with
-# remoteEnv applied, so an unset or foreign SSH_AUTH_SOCK is what a consumer
-# without the entry looks like from inside post-start.sh.
+# Hooks run with remoteEnv applied, so this is what a missing entry looks like.
 post_start_fails_without_remote_env() (
     unset SSH_AUTH_SOCK
     post_start_fails_with_next_steps
@@ -71,7 +65,6 @@ working_gpg_program_is_kept() (
     test "$(git config --global --get gpg.ssh.program)" = /usr/bin/ssh-keygen
 )
 
-# git expands ~ in gpg.ssh.program; post-start.sh must judge the expanded path.
 tilde_gpg_program_is_kept() (
     mkdir -p ~/bin
     cp /usr/bin/ssh-keygen ~/bin/signer
@@ -94,7 +87,7 @@ unwritable_gitconfig_fails_with_next_steps() (
     dir="$(mktemp -d)"
     export GIT_CONFIG_GLOBAL="$dir/gitconfig"
     git config --global gpg.ssh.program /nonexistent/op-ssh-sign
-    chmod 500 "$dir"   # git writes a new file next to the old one, so it needs the directory
+    chmod 500 "$dir"   # git rewrites the file via a temp file in the same directory
     post_start_fails_with_next_steps
 )
 
@@ -103,7 +96,7 @@ check "openssh-client is installed"                                   command -v
 check "ssh-keygen can produce SSH signatures"                         ssh_keygen_can_sign
 check "post-start.sh is installed and executable"                     test -x $POST_START
 
-# --- The forwarded socket (postStartCommand has already run once at start-up)
+# --- The forwarded socket (postStartCommand already ran once at start-up)
 check "the scenario mounted a socket at $SOCKET"                      test -S $SOCKET
 check "postStartCommand made the socket usable by the container user" test -r $SOCKET -a -w $SOCKET
 check "post-start.sh can run again"                                   $POST_START
@@ -111,7 +104,7 @@ check "remoteEnv points SSH_AUTH_SOCK at the socket"                  test "${SS
 check "the forwarded agent answers and holds a key"                   env SSH_AUTH_SOCK=$SOCKET ssh-add -l
 check "an agent-held key signs through the forwarded socket"          agent_key_signs_through_socket
 
-# --- Missing consumer config: this must be loud, not a quiet no-op
+# --- Missing consumer config
 check "post-start.sh fails with next steps without a socket"          post_start_fails_without_socket
 check "post-start.sh fails with next steps when the mount is a directory" post_start_fails_when_mount_is_a_directory
 check "post-start.sh fails with next steps without remoteEnv"         post_start_fails_without_remote_env
