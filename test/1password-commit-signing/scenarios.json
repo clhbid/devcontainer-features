@@ -1,0 +1,28 @@
+{
+  "ubuntu": {
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "runArgs": [
+      "-v",
+      "/tmp/1password-commit-signing-test/agent.sock:/ssh-agent.sock"
+    ],
+    "remoteEnv": {
+      "SSH_AUTH_SOCK": "/ssh-agent.sock"
+    },
+    "features": {
+      "1password-commit-signing": {}
+    }
+  },
+  "debian": {
+    "image": "mcr.microsoft.com/devcontainers/base:debian",
+    "runArgs": [
+      "-v",
+      "/tmp/1password-commit-signing-test/agent.sock:/ssh-agent.sock"
+    ],
+    "remoteEnv": {
+      "SSH_AUTH_SOCK": "/ssh-agent.sock"
+    },
+    "features": {
+      "1password-commit-signing": {}
+    }
+  }
+}

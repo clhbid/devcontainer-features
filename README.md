@@ -10,18 +10,18 @@ The repositories that consume these Features are `clhbid/CLHbid-LiveAuction`,
 
 | Feature                    | ID                                                                | Status      |
 | -------------------------- | ----------------------------------------------------------------- | ----------- |
-| `1password-commit-signing` | `ghcr.io/clhbid/devcontainer-features/1password-commit-signing:1` | Not yet built |
+| `1password-commit-signing` | `ghcr.io/clhbid/devcontainer-features/1password-commit-signing:1` | Built, awaiting first publish to GHCR |
 
 ## Platform support
 
 `1password-commit-signing` works only on **macOS hosts with the
-[1Password SSH agent](https://developer.1password.com/docs/ssh/agent) enabled**. It forwards the
-1Password agent socket from its macOS path
-(`~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`) into the container.
+[1Password SSH agent](https://developer.1password.com/docs/ssh/agent) enabled**. The consuming
+`devcontainer.json` mounts the agent socket and sets `remoteEnv`; the
+[Feature's README](src/1password-commit-signing/README.md) has the lines and the reasons.
 
-Windows and Linux hosts are not supported. On those hosts the Feature must be a no-op — it must not
-break the container or interfere with whatever SSH agent forwarding is already in place. Pull
-requests adding Windows and Linux support are welcome.
+Windows and Linux hosts are not supported: the Feature's start-up script fails there with an
+explanation rather than silently displacing VS Code's own agent forwarding. Pull requests adding
+support are welcome.
 
 ## Layout
 
@@ -30,8 +30,12 @@ Standard Features layout, so the `devcontainers/action` publisher can find every
 ```
 src/<feature-id>/devcontainer-feature.json
 src/<feature-id>/install.sh
-test/<feature-id>/test.sh
+test/<feature-id>/scenarios.json
+test/<feature-id>/<scenario>.sh      # one per scenario; may share a checks.sh
 ```
+
+`./scripts/test-features.sh [scenario-filter]` runs the tests locally and in CI; it wraps
+`devcontainer features test` with the host-side SSH agent the scenarios need.
 
 `src/` is the source of truth for the published OCI artifacts. A push to `main` that changes a
 Feature's `version` publishes a new release; the version must be bumped in the same pull request

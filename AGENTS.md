@@ -9,7 +9,7 @@ is public — anything in this file, and anything you commit here, is visible ou
 ### Before Starting Work
 
 1. Read the Layout section in `README.md` — `src/<feature-id>/` is the Feature source,
-   `test/<feature-id>/test.sh` is its test
+   `test/<feature-id>/` its test scenarios
 1. Assign the issue to yourself — or to the person you are operating as — if that hasn't been
    done already, then set its `Status` to `In progress` on the CLHbid Delivery org project. See
    the `issue-tracker` skill for details
@@ -18,8 +18,7 @@ is public — anything in this file, and anything you commit here, is visible ou
 
 1. If you added or changed a Feature, bump its `version` in `devcontainer-feature.json` in the
    same pull request — a push to `main` that changes `version` publishes a new release
-1. Test the Feature locally with the devcontainers CLI:
-   `devcontainer features test -f <feature-id> --base-image <image>`
+1. Test the Feature locally with `./scripts/test-features.sh`
 1. Push the branch and open a pull request that references the issue it implements — see the
    `open-pr` skill
 1. Request review from a human maintainer — see **How a run ends** below

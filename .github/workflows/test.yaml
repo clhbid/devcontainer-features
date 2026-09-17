@@ -1,0 +1,26 @@
+name: "CI - Test Features"
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/**"
+      - "scripts/test-features.sh"
+      - ".github/workflows/test.yaml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Install latest devcontainer CLI"
+        run: npm install -g @devcontainers/cli
+
+      # Starts a throwaway ssh-agent on the host and mounts its socket into
+      # each scenario in place of the 1Password one, then runs every scenario.
+      - name: "Test Features"
+        run: ./scripts/test-features.sh
