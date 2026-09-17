@@ -38,9 +38,9 @@ Image- or Dockerfile-based (`image` / `build`) — `runArgs`, **not** `mounts`:
 
 ## What the Feature does
 
-- **Build** (`install.sh`): installs `openssh-client` unless `ssh-keygen -Y sign` already works,
-  probed by signing a scratch file rather than by version. Fails the build with next steps if it
-  still doesn't.
+- **Build** (`install.sh`): installs `openssh-client` unless `ssh-keygen` can sign with a scratch
+  key held only by `ssh-agent`. The capability is probed rather than inferred from the OpenSSH
+  version. Fails the build with next steps if it still doesn't work.
 - **Every start** (`post-start.sh`): unsets a copied `gpg.ssh.program` that doesn't exist in the
   container so git falls back to `ssh-keygen`; re-owns `/ssh-agent.sock` to the container user's
   group (Docker Desktop re-mounts it `root:root` each start); checks `SSH_AUTH_SOCK` is the

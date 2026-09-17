@@ -11,31 +11,35 @@ fail() {
     exit 1
 }
 
-# Can ssh-keygen produce SSH signatures? Try it rather than checking a
-# version: distros backport features, and crypto policies can remove them.
-supports_ssh_signing() {
+# Can ssh-keygen sign with a key held only by an agent? Try it rather than
+# checking a version: distros backport features, and crypto policies can remove them.
+supports_agent_ssh_signing() {
     command -v ssh-keygen >/dev/null || return 1
 
     local workdir ok=1
     workdir="$(mktemp -d)"
     printf 'probe' > "$workdir/payload"
     if ssh-keygen -q -t ed25519 -N '' -f "$workdir/key" >/dev/null 2>&1 &&
-        ssh-keygen -Y sign -n git -f "$workdir/key" "$workdir/payload" >/dev/null 2>&1; then
+        ssh-agent sh -c '
+            ssh-add "$1/key" >/dev/null 2>&1 &&
+                rm "$1/key" &&
+                ssh-keygen -Y sign -n git -f "$1/key.pub" "$1/payload"
+        ' sh "$workdir" >/dev/null 2>&1; then
         ok=0
     fi
     rm -rf "$workdir"
     return "$ok"
 }
 
-if ! supports_ssh_signing; then
+if ! supports_agent_ssh_signing; then
     if ! command -v apt-get >/dev/null; then
         fail <<EOF
-$FEATURE: this image cannot sign commits with SSH, and openssh-client cannot be installed automatically.
-  What happened: 'ssh-keygen -Y sign' is unavailable, and this Feature only knows how to install
-  openssh-client with apt-get, which this image does not have.
+$FEATURE: this image cannot sign commits with an agent-held SSH key, and openssh-client cannot be installed automatically.
+  What happened: ssh-keygen could not sign with a key held only by ssh-agent, and this Feature
+  only knows how to install openssh-client with apt-get, which this image does not have.
   Next steps:
-  - Install an OpenSSH client that supports 'ssh-keygen -Y sign' in your Dockerfile before this
-    Feature runs.
+  - Install an OpenSSH client that supports signing with an agent-held key in your Dockerfile
+    before this Feature runs.
   - Or switch to a Debian or Ubuntu based image, such as mcr.microsoft.com/devcontainers/base:ubuntu.
 EOF
     fi
@@ -44,12 +48,12 @@ EOF
     rm -rf /var/lib/apt/lists/*
 fi
 
-if ! supports_ssh_signing; then
+if ! supports_agent_ssh_signing; then
     fail <<EOF
-$FEATURE: openssh-client is installed but 'ssh-keygen -Y sign' does not work, so git cannot sign commits.
-  What happened: this Feature generated a scratch ed25519 key and tried to sign a file with it,
-  and ssh-keygen failed. Usually the OpenSSH client is too old to have 'ssh-keygen -Y sign';
-  a system crypto policy that disables ed25519 fails the same way.
+$FEATURE: openssh-client is installed but cannot sign with an agent-held SSH key.
+  What happened: this Feature loaded a scratch ed25519 key into ssh-agent, removed the private-key
+  file, and ssh-keygen could not sign with the remaining public key. Usually the OpenSSH client
+  lacks agent-backed SSH signing; a system crypto policy that disables ed25519 fails the same way.
   Next steps:
   - Use a newer base image, such as mcr.microsoft.com/devcontainers/base:ubuntu.
   - Or install a newer openssh-client in your Dockerfile before this Feature runs.
