@@ -36,8 +36,10 @@ Feature does not set them.
 
 ## Usage
 
-Three additions to `devcontainer.json`: the Feature, `remoteEnv`, and the socket mount. **How
-you mount it depends on the kind of dev container.**
+Three additions to `devcontainer.json`, **all required**: the Feature, `remoteEnv`, and the
+socket mount. Without the mount or `remoteEnv` the container's start-up fails with a message
+saying which one is missing — see [Platform support](#platform-support) for why it isn't a
+quiet no-op. **How you mount it depends on the kind of dev container.**
 
 ### Compose-based (`dockerComposeFile`)
 

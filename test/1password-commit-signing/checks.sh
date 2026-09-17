@@ -74,6 +74,15 @@ working_gpg_program_is_kept() (
     test "$(git config --global --get gpg.ssh.program)" = /usr/bin/ssh-keygen
 )
 
+# git expands ~ in gpg.ssh.program; post-start.sh must judge the expanded path.
+tilde_gpg_program_is_kept() (
+    mkdir -p ~/bin
+    cp /usr/bin/ssh-keygen ~/bin/signer
+    git config --global gpg.ssh.program '~/bin/signer'
+    $POST_START
+    test "$(git config --global --get gpg.ssh.program)" = '~/bin/signer'
+)
+
 missing_gpg_program_is_unset() (
     git config --global gpg.ssh.program /Applications/1Password.app/Contents/MacOS/op-ssh-sign
     $POST_START
@@ -114,6 +123,7 @@ check "the profile script keeps an existing SSH_AUTH_SOCK without a socket" prof
 
 # --- gitconfig
 check "a working gpg.ssh.program is kept"                             working_gpg_program_is_kept
+check "a working gpg.ssh.program under ~ is kept"                     tilde_gpg_program_is_kept
 check "a missing gpg.ssh.program is unset"                            missing_gpg_program_is_unset
 check "an unwritable gitconfig fails with next steps"                 unwritable_gitconfig_fails_with_next_steps
 

@@ -35,7 +35,8 @@ as_root() {
 
 # --- 1. gitconfig
 
-program="$(git config --global --get gpg.ssh.program 2>/dev/null)"
+# --type=path expands a leading ~ the way git itself does when it runs the program.
+program="$(git config --global --type=path --get gpg.ssh.program 2>/dev/null)"
 if [ -n "$program" ] && ! command -v "$program" >/dev/null; then
     if ! git config --global --unset gpg.ssh.program; then
         fail <<EOF
