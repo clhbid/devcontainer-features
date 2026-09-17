@@ -3,9 +3,6 @@
 Shared [dev container Features](https://containers.dev/implementors/features/) used by CLHbid.com
 repositories, published to GitHub Container Registry.
 
-The repositories that consume these Features are `clhbid/CLHbid-LiveAuction`,
-`clhbid/infrastructure` and `clhbid/clhbid.com`.
-
 ## Features
 
 | Feature                    | ID                                                                | Status      |
