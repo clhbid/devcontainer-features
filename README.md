@@ -31,7 +31,7 @@ Standard Features layout, so the `devcontainers/action` publisher can find every
 src/<feature-id>/devcontainer-feature.json
 src/<feature-id>/install.sh
 test/<feature-id>/scenarios.json
-test/<feature-id>/<scenario>.sh
+test/<feature-id>/<scenario>.sh      # one per scenario; may share a checks.sh
 ```
 
 `./scripts/test-features.sh [scenario-filter]` runs the tests locally and in CI; it wraps

@@ -9,7 +9,7 @@ is public — anything in this file, and anything you commit here, is visible ou
 ### Before Starting Work
 
 1. Read the Layout section in `README.md` — `src/<feature-id>/` is the Feature source,
-   `test/<feature-id>/test.sh` is its test
+   `test/<feature-id>/` its test scenarios
 1. Assign the issue to yourself — or to the person you are operating as — if that hasn't been
    done already, then set its `Status` to `In progress` on the CLHbid Delivery org project. See
    the `issue-tracker` skill for details

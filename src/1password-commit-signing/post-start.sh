@@ -25,6 +25,10 @@ as_root() {
     if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo -n "$@"; fi
 }
 
+socket_usable() {
+    [ -r "$SOCKET" ] && [ -w "$SOCKET" ]
+}
+
 # --- 1. gitconfig
 
 # --type=path expands ~ as git does when it runs the program.
@@ -69,13 +73,12 @@ $FEATURE: there is no socket at $SOCKET, so git cannot sign commits.
 EOF
 fi
 
-if [ ! -r "$SOCKET" ] || [ ! -w "$SOCKET" ]; then
-    group="$(id -gn)"
-    as_root chown "root:$group" "$SOCKET" 2>/dev/null
+if ! socket_usable; then
+    as_root chown "root:$(id -gn)" "$SOCKET" 2>/dev/null
     as_root chmod 660 "$SOCKET" 2>/dev/null
 fi
 
-if [ ! -r "$SOCKET" ] || [ ! -w "$SOCKET" ]; then
+if ! socket_usable; then
     fail <<EOF
 $FEATURE: the 1Password SSH agent socket ($SOCKET) is not readable and writable by $(id -un), so git cannot sign commits.
   What happened: Docker re-mounts the socket owned by root on every container start, and this
