@@ -11,11 +11,10 @@ mount and the `SSH_AUTH_SOCK` entry. Both halves of that split are forced — se
 
 At build time (`install.sh`):
 
-- Installs `openssh-client` if `ssh-keygen -Y sign` is not already available, and fails the build
-  with next steps if it still isn't (OpenSSH ≥ 8.9 is required).
-- Installs `/etc/profile.d/1password-commit-signing.sh`, which exports
-  `SSH_AUTH_SOCK=/ssh-agent.sock` in login shells — `devcontainer exec`, `docker exec`, other
-  editors — **only** when `/ssh-agent.sock` is a real socket.
+- Installs `openssh-client` if `ssh-keygen -Y sign` does not already work, and fails the build
+  with next steps if it still doesn't. It probes by signing a scratch file rather than checking
+  a version number, since distros backport features and crypto policies can remove them.
+- Installs `post-start.sh`.
 
 On every container start (`postStartCommand`):
 
@@ -26,13 +25,19 @@ On every container start (`postStartCommand`):
   `/Applications/1Password.app/Contents/MacOS/op-ssh-sign`.)
 - Re-owns `/ssh-agent.sock` to `root:<container user's group> 660` — Docker Desktop re-mounts it
   `root:root` each start.
+- Checks `SSH_AUTH_SOCK` is `/ssh-agent.sock`. Lifecycle hooks run with `remoteEnv` applied and
+  nothing else in the container sets that value, so this is how the script knows the consumer's
+  `remoteEnv` entry is in place.
 - **Fails, with what happened and next steps**, if `/ssh-agent.sock` is missing, is an empty
-  directory (the 1Password agent is off, or this is a Linux/Windows host), or can't be made
-  readable and writable. `SSH_AUTH_SOCK` already points at it, so a quiet no-op would leave git
-  failing with `Couldn't get agent socket?` and nothing to explain why.
+  directory (the 1Password agent is off, or this is a Linux/Windows host), can't be made readable
+  and writable, or `SSH_AUTH_SOCK` doesn't point at it. A quiet no-op would leave git failing
+  with `Couldn't get agent socket?` or `Couldn't find key in agent?` and nothing to explain why.
 
 `user.signingkey`, `gpg.format` and `commit.gpgsign` come from the copied host gitconfig; the
 Feature does not set them.
+
+VS Code and the devcontainer CLI both apply `remoteEnv` to terminals and `exec`. A plain
+`docker exec` shell does not get it — set `SSH_AUTH_SOCK=/ssh-agent.sock` yourself there.
 
 ## Usage
 
@@ -108,10 +113,12 @@ agent is Apple's launchd agent, which holds no keys: 1Password wires itself in t
 `IdentityAgent` in `~/.ssh/config`, which VS Code doesn't see.
 
 That override beats everything a Feature can do. The integrated terminal is an interactive
-non-login shell, so `/etc/profile.d` never runs there; the override is applied after
+non-login shell, so an `/etc/profile.d` export never runs there; the override is applied after
 `userEnvProbe`, so a probed export loses; and a Feature `containerEnv` is inherited by the VS Code
 server and then overridden per terminal all the same. `git commit` fails with
-`Couldn't find key in agent?` in each case. The one setting VS Code layers *on top of* its own
+`Couldn't find key in agent?` in each case. (An earlier version of this Feature shipped a guarded
+`profile.d` export for non-VS Code shells. It went: the user-env probe fed it into lifecycle
+hooks too, which made a missing `remoteEnv` undetectable from `post-start.sh`.) The one setting VS Code layers *on top of* its own
 forwarding is `remoteEnv` — which the Feature spec doesn't allow a Feature to carry (the CLI keeps
 only lifecycle hooks, `mounts`, `containerEnv`, `customizations` and a few container flags from
 Feature metadata). So it lives in the consumer's `devcontainer.json`, and it can't be conditional.

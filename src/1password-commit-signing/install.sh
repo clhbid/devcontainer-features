@@ -14,8 +14,8 @@ fail() {
     exit 1
 }
 
-# Can ssh-keygen produce SSH signatures (OpenSSH 8.9 or newer)? Try it
-# rather than parsing a version string, since distros backport features.
+# Can ssh-keygen produce SSH signatures? Try it rather than checking a
+# version: distros backport features, and crypto policies can remove them.
 supports_ssh_signing() {
     command -v ssh-keygen >/dev/null || return 1
 
@@ -34,8 +34,8 @@ if ! supports_ssh_signing; then
     if ! command -v apt-get >/dev/null; then
         fail <<EOF
 $FEATURE: this image cannot sign commits with SSH, and openssh-client cannot be installed automatically.
-  What happened: 'ssh-keygen -Y sign' (OpenSSH 8.9 or newer) is unavailable, and this Feature only
-  knows how to install openssh-client with apt-get, which this image does not have.
+  What happened: 'ssh-keygen -Y sign' is unavailable, and this Feature only knows how to install
+  openssh-client with apt-get, which this image does not have.
   Next steps:
   - Install an OpenSSH client that supports 'ssh-keygen -Y sign' in your Dockerfile before this
     Feature runs.
@@ -50,25 +50,16 @@ fi
 if ! supports_ssh_signing; then
     fail <<EOF
 $FEATURE: openssh-client is installed but 'ssh-keygen -Y sign' does not work, so git cannot sign commits.
-  What happened: the installed OpenSSH client is older than 8.9, the first release that supports
-  SSH signatures.
+  What happened: this Feature generated a scratch ed25519 key and tried to sign a file with it,
+  and ssh-keygen failed. Usually the OpenSSH client is too old to have 'ssh-keygen -Y sign';
+  a system crypto policy that disables ed25519 fails the same way.
   Next steps:
   - Use a newer base image, such as mcr.microsoft.com/devcontainers/base:ubuntu.
-  - Or install a backported openssh-client (8.9 or newer) in your Dockerfile before this Feature runs.
+  - Or install a newer openssh-client in your Dockerfile before this Feature runs.
+  - Or check the image's crypto policy allows ed25519 keys.
 EOF
 fi
 
 install -D -m 755 "$(dirname "$0")/post-start.sh" /usr/local/share/$FEATURE/post-start.sh
-
-# VS Code gets SSH_AUTH_SOCK from the consumer's remoteEnv, the only setting
-# it applies on top of its own SSH agent forwarding. This profile script
-# covers everything else -- `devcontainer exec`, `docker exec` login shells,
-# other editors -- and only sets the variable when the socket is really
-# there, so a shell on a host without it keeps whatever agent it had.
-cat > /etc/profile.d/$FEATURE.sh <<'EOF'
-if [ -S /ssh-agent.sock ]; then
-    export SSH_AUTH_SOCK=/ssh-agent.sock
-fi
-EOF
 
 echo "Done!"

@@ -2,18 +2,23 @@
 # Runs on every container start (postStartCommand). Safe to run repeatedly.
 #
 # The consumer's devcontainer.json mounts the 1Password agent socket at
-# /ssh-agent.sock and points SSH_AUTH_SOCK at it. This script then:
+# /ssh-agent.sock and points SSH_AUTH_SOCK at it with remoteEnv. This
+# script then:
 #
 # 1. Unsets a gpg.ssh.program in the global gitconfig that does not exist in
 #    the container. Tools that copy the host ~/.gitconfig bring across the
 #    macOS 1Password signing helper, and git needs to fall back to ssh-keygen.
 # 2. Makes the socket readable and writable by the container user. Docker
 #    Desktop re-mounts it root:root 0660 on every start.
+# 3. Checks SSH_AUTH_SOCK points at the socket. Lifecycle hooks run with
+#    remoteEnv applied, and nothing else in the container sets the variable
+#    to this path, so seeing it here means the consumer's remoteEnv is in
+#    place -- and VS Code's terminals and Source Control will see it too.
 #
-# Both are required for signing to work, so when either cannot be done the
-# script says what happened and what to do next, then exits non-zero. It
-# does not use `set -e`: every failure it cares about is checked explicitly
-# so that it can explain itself.
+# All three are required for signing to work, so when any cannot be done
+# the script says what happened and what to do next, then exits non-zero.
+# It does not use `set -e`: every failure it cares about is checked
+# explicitly so that it can explain itself.
 set -u
 
 FEATURE=1password-commit-signing
@@ -93,5 +98,19 @@ $FEATURE: the 1Password SSH agent socket ($SOCKET) is not readable and writable 
     'sudo chown root:$(id -gn) $SOCKET && sudo chmod 660 $SOCKET'.
   - If the container user has no sudo access, set "remoteUser": "root" in devcontainer.json or
     use a base image that grants the user sudo, then rebuild the container.
+EOF
+fi
+
+# --- 3. SSH_AUTH_SOCK
+
+if [ "${SSH_AUTH_SOCK:-}" != "$SOCKET" ]; then
+    fail <<EOF
+$FEATURE: SSH_AUTH_SOCK is ${SSH_AUTH_SOCK:-unset}, not $SOCKET, so git will not find the 1Password agent.
+  What happened: devcontainer.json does not set "remoteEnv": { "SSH_AUTH_SOCK": "$SOCKET" }.
+  Without it VS Code points git at the SSH agent it forwards from the host, which does not hold
+  your 1Password keys, and commits fail with "Couldn't find key in agent?".
+  Next steps:
+  - Add "remoteEnv": { "SSH_AUTH_SOCK": "$SOCKET" } to devcontainer.json and rebuild the container.
+    See $README
 EOF
 fi
