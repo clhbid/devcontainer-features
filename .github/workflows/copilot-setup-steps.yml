@@ -30,5 +30,13 @@ jobs:
       - name: Install agent skills
         run: ./scripts/install-agent-skills.sh github-copilot
 
+      # Copilot's skill tool loads only project skills, not ~/.agents/skills: github/copilot-cli#4401.
+      # The git exclude keeps the copies out of the agent's commits.
+      - name: Expose skills to Copilot's skill tool
+        run: |
+          mkdir -p .github/skills
+          cp -r ~/.agents/skills/. .github/skills/
+          echo .github/skills/ >> .git/info/exclude
+
       - name: List installed skills
         run: ls -l ~/.agents/skills
