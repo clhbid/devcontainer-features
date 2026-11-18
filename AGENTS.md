@@ -46,13 +46,12 @@ them:
 | `afk-loop`      | Dispatching work to Copilot, reviewing what comes back, and handling a run that goes wrong                                                                     |
 | `open-pr`       | Opening and updating a pull request                                                                                                                             |
 
-This repo has no devcontainer, so nothing installs the skills for you automatically. Install them
-by hand with `./scripts/install-agent-skills.sh` — pass an agent name to install elsewhere, e.g.
-`./scripts/install-agent-skills.sh copilot`, or `'*'` for every agent it detects.
+This repo has no devcontainer, so nothing installs the skills for you automatically. Install them by
+hand with `./scripts/install-agent-skills.sh` — pass an agent name to install elsewhere, e.g.
+`./scripts/install-agent-skills.sh github-copilot`, or `'*'` for every agent it detects.
 
-**If you are reading this without those skills, you have everything you need.** A Copilot coding
-agent runs in an environment that has not installed them: the commands above, and **How a run
-ends**, are the whole contract. Anything else is reference material for a person or a session with
-the skills to hand — never a prerequisite for finishing an issue. If you find you needed something
-that isn't here, say so on the pull request, so it can be added to this file rather than restored
-as a copy of the docs.
+**If you are reading this without those skills, you have everything you need.** The commands above,
+and **How a run ends**, are the whole contract. Anything else is reference material for a person or
+a session with the skills to hand — never a prerequisite for finishing an issue. If you find you
+needed something that isn't here, say so on the pull request, so it can be added to this file rather
+than restored as a copy of the docs.
